@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=1200, height=630"/>
+<title>DartsHQ OG image template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #13151A;
+  }
+  .og-canvas {
+    width: 1200px;
+    height: 630px;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #13151A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .og-logo {
+    flex-shrink: 0;
+    display: block;
+  }
+  .og-wordmark {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 72px;
+    line-height: 1;
+    color: #E8E6E0;
+    width: 100%;
+    text-align: center;
+  }
+  .og-wordmark span {
+    color: #B8962E;
+  }
+  .og-tagline {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    font-size: 22px;
+    line-height: 1.35;
+    color: #6b7280;
+    margin-top: 16px;
+    width: 100%;
+    text-align: center;
+    max-width: 1000px;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body>
+<div class="og-canvas">
+  <svg class="og-logo" width="80" height="80" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="14" cy="14" r="13" stroke="#2a2a3a" stroke-width="1.5"/>
+    <circle cx="14" cy="14" r="9" stroke="#2a2a3a" stroke-width="1.5"/>
+    <circle cx="14" cy="14" r="5" stroke="#B8962E" stroke-width="1.5"/>
+    <line x1="14" y1="1" x2="14" y2="4" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="14" y1="24" x2="14" y2="27" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="1" y1="14" x2="4" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+    <line x1="24" y1="14" x2="27" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="14" cy="14" r="2.5" fill="#B8962E"/>
+  </svg>
+  <p class="og-wordmark">Darts<span>HQ</span></p>
+  <p class="og-tagline">Most darts apps just count. DartsHQ coaches.</p>
+</div>
+</body>
+</html>
