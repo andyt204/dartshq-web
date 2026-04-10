@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DartsHQ — Your AI Darts Coach</title>
+<meta name="description" content="DartsHQ is the AI-powered darts coaching app built for serious players. Personalised coaching, real-time analysis, and mental game training. Coming soon."/>
+<meta property="og:title" content="DartsHQ — Your AI Darts Coach"/>
+<meta property="og:description" content="Most darts apps just count. DartsHQ coaches."/>
+<meta property="og:url" content="https://dartshq.com"/>
+<meta property="og:type" content="website"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #B8962E;
+    --gold-hover: #d4aa45;
+    --gold-dim: rgba(184,150,46,0.15);
+    --bg: #0d0f14;
+    --surface: #13151A;
+    --surface2: #1a1d24;
+    --border: #2a2a3a;
+    --border2: #3a3a4a;
+    --text: #E8E6E0;
+    --muted: #6b7280;
+    --muted2: #4a4d58;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BACKGROUND ── */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── RADIAL GLOW ── */
+  .glow {
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(184,150,46,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    top: -100px; right: -100px;
+    animation: glow-drift 12s ease-in-out infinite alternate;
+  }
+  @keyframes glow-drift {
+    from { transform: translate(0,0) scale(1); }
+    to   { transform: translate(-60px, 80px) scale(1.15); }
+  }
+
+  /* ── LAYOUT ── */
+  .page { position: relative; z-index: 1; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 18px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid transparent;
+    transition: background 0.4s, border-color 0.4s, backdrop-filter 0.4s;
+  }
+  nav.scrolled {
+    background: rgba(13,15,20,0.85);
+    backdrop-filter: blur(12px);
+    border-color: var(--border);
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+  .nav-wordmark {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .nav-wordmark span { color: var(--gold); }
+  .nav-alpha-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    padding: 8px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .nav-alpha-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px 80px;
+    position: relative;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.2s;
+  }
+
+  /* Animated dartboard behind hero text */
+  .hero-board {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.07;
+    pointer-events: none;
+    animation: board-slow-spin 60s linear infinite;
+  }
+  @keyframes board-slow-spin {
+    from { transform: translate(-50%,-50%) rotate(0deg); }
+    to   { transform: translate(-50%,-50%) rotate(360deg); }
+  }
+
+  /* ── HERO LOGO MARK ── */
+  .hero-logo-mark {
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.3s;
+  }
+
+  .hero-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(64px, 10vw, 130px);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 0.95;
+    color: var(--text);
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.4s;
+  }
+  .hero-title span { color: var(--gold); }
+
+  .hero-sub {
+    font-size: clamp(15px, 2vw, 19px);
+    font-weight: 300;
+    color: var(--muted);
+    max-width: 520px;
+    margin: 0 auto 16px;
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.55s;
+  }
+  .hero-sub strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .hero-tagline {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--muted2);
+    text-transform: uppercase;
+    margin-bottom: 52px;
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.65s;
+  }
+
+  /* ── WAITLIST CTA ── */
+  .waitlist-wrap {
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 0.8s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .waitlist-btn {
+    display: inline-block;
+    background: var(--gold);
+    border: none;
+    color: #0d0f14;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 14px 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .waitlist-btn:hover { background: var(--gold-hover); }
+  .waitlist-btn:active { transform: scale(0.97); }
+  .waitlist-note {
+    font-size: 12px;
+    color: var(--muted2);
+    text-align: center;
+  }
+  .waitlist-note a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border2); }
+  .waitlist-note a:hover { color: var(--gold); border-color: var(--gold); }
+
+  /* ── SCROLL INDICATOR ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    animation: fade-up 0.8s ease forwards 1.4s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .scroll-hint span {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted2);
+    text-transform: uppercase;
+  }
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scroll-pulse 2s ease-in-out infinite;
+  }
+  @keyframes scroll-pulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.1); }
+  }
+
+  /* ── FEATURES SECTION ── */
+  .features {
+    padding: 100px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(32px, 4vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin-bottom: 60px;
+    max-width: 600px;
+    line-height: 1.1;
+  }
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .feature-card {
+    background: var(--surface);
+    padding: 36px 32px;
+    transition: background 0.2s;
+  }
+  .feature-card:hover { background: var(--surface2); }
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 20px;
+  }
+  .feature-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+  .feature-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ── AUTODARTS STRIP ── */
+  .autodarts-strip {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 24px;
+    text-align: center;
+    margin: 0;
+  }
+  .autodarts-strip p {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    color: var(--muted2);
+    text-transform: uppercase;
+  }
+  .autodarts-strip strong { color: var(--muted); font-weight: 500; }
+
+  /* ── ALPHA CTA ── */
+  .alpha-cta {
+    padding: 100px 24px;
+    text-align: center;
+    position: relative;
+  }
+  .alpha-cta-inner {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 60px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .alpha-cta-inner::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold), transparent);
+  }
+  .alpha-badge {
+    display: inline-block;
+    background: var(--gold-dim);
+    border: 1px solid rgba(184,150,46,0.3);
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .alpha-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.15;
+  }
+  .alpha-desc {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 36px;
+    line-height: 1.7;
+  }
+  .alpha-link {
+    display: inline-block;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: 1px solid var(--border2);
+    text-decoration: none;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .alpha-link:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-logo {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text);
+  }
+  .footer-logo span { color: var(--gold); }
+  footer p {
+    font-size: 12px;
+    color: var(--muted2);
+  }
+  footer a { color: var(--muted2); text-decoration: none; }
+  footer a:hover { color: var(--gold); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 600px) {
+    nav { padding: 16px 20px; }
+    .waitlist-form { flex-direction: column; padding: 12px; }
+    .alpha-cta-inner { padding: 40px 24px; }
+    footer { padding: 32px 20px; }
+    .hero-logo-mark svg { width: 72px; height: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Animated background canvas -->
+<canvas id="bg-canvas"></canvas>
+<div class="glow"></div>
+
+<div class="page">
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="/" class="nav-logo">
+      <!-- Inline SVG logo mark — nav size -->
+      <svg width="36" height="36" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" stroke="#2a2a3a" stroke-width="1.5"/>
+        <circle cx="14" cy="14" r="9" stroke="#2a2a3a" stroke-width="1.5"/>
+        <circle cx="14" cy="14" r="5" stroke="#B8962E" stroke-width="1.5"/>
+        <line x1="14" y1="1" x2="14" y2="4" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="24" x2="14" y2="27" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="1" y1="14" x2="4" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="24" y1="14" x2="27" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="14" cy="14" r="2.5" fill="#B8962E"/>
+      </svg>
+      <span class="nav-wordmark">Darts<span>HQ</span></span>
+    </a>
+    <a href="https://app.dartshq.com" class="nav-alpha-btn" target="_blank">Alpha Access →</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+
+    <!-- Accurately generated rotating dartboard -->
+    <svg id="hero-board" class="hero-board" width="700" height="700" viewBox="0 0 700 700" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
+
+    <!-- Prominent hero logo mark -->
+    <div class="hero-logo-mark">
+      <svg width="88" height="88" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="14" cy="14" r="13" stroke="#2a2a3a" stroke-width="1.2"/>
+        <circle cx="14" cy="14" r="9" stroke="#3a3a4a" stroke-width="1.2"/>
+        <circle cx="14" cy="14" r="5" stroke="#B8962E" stroke-width="1.5"/>
+        <line x1="14" y1="1" x2="14" y2="4" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="14" y1="24" x2="14" y2="27" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="1" y1="14" x2="4" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="24" y1="14" x2="27" y2="14" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="14" cy="14" r="2.5" fill="#B8962E"/>
+      </svg>
+    </div>
+
+    <p class="hero-eyebrow">Coming Soon</p>
+    <h1 class="hero-title">Darts<span>HQ</span></h1>
+
+    <p class="hero-sub">Most darts apps just count.<br/><strong>DartsHQ coaches.</strong><br/>Built for Autodarts hardware users and manual entry players alike.</p>
+    <p class="hero-tagline">AI-powered coaching · Real-time analysis · Mental game training</p>
+
+    <div class="waitlist-wrap">
+      <a href="https://tally.so/r/yPvWlg" class="waitlist-btn" target="_blank" rel="noopener">Join the Waitlist</a>
+      <p class="waitlist-note">No spam. No card required. <a href="https://app.dartshq.com" target="_blank">Already approved for alpha? →</a></p>
+    </div>
+
+    <div class="scroll-hint">
+      <span>Scroll</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <p class="section-label reveal">What it does</p>
+    <h2 class="section-title reveal">Coaching that actually understands your game</h2>
+    <div class="features-grid">
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="15" stroke="#2a2a3a" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="10" stroke="#2a2a3a" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="5" stroke="#B8962E" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="2" fill="#B8962E"/>
+        </svg>
+        <p class="feature-title">AI Micro-Corrections</p>
+        <p class="feature-desc">Real-time coaching cues between darts. Not just your score — why you missed, and what to fix next throw.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <rect x="4" y="8" width="28" height="20" rx="3" stroke="#2a2a3a" stroke-width="1.5"/>
+          <line x1="4" y1="16" x2="32" y2="16" stroke="#B8962E" stroke-width="1"/>
+          <line x1="13" y1="8" x2="13" y2="28" stroke="#2a2a3a" stroke-width="0.8" stroke-opacity="0.5"/>
+          <line x1="23" y1="8" x2="23" y2="28" stroke="#2a2a3a" stroke-width="0.8" stroke-opacity="0.5"/>
+          <circle cx="9" cy="22" r="2" fill="#B8962E"/>
+          <circle cx="18" cy="19" r="2" fill="#B8962E"/>
+          <circle cx="27" cy="13" r="2" fill="#B8962E"/>
+        </svg>
+        <p class="feature-title">Deep Analytics</p>
+        <p class="feature-desc">Heatmaps, grouping drift, doubles conversion, segment accuracy — a full picture of your game over time.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <path d="M18 4 L18 10 M18 26 L18 32 M4 18 L10 18 M26 18 L32 18" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="18" cy="18" r="7" stroke="#2a2a3a" stroke-width="1.5"/>
+          <circle cx="18" cy="18" r="3" fill="#B8962E"/>
+        </svg>
+        <p class="feature-title">Mental Game Training</p>
+        <p class="feature-desc">Personalised psychological assessment. Coaching persona built around how you think, not just how you throw.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <rect x="6" y="10" width="24" height="16" rx="3" stroke="#2a2a3a" stroke-width="1.5"/>
+          <path d="M14 10 L14 26" stroke="#2a2a3a" stroke-width="0.8" stroke-opacity="0.4"/>
+          <path d="M10 16 L14 18 L20 14 L26 17" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="feature-title">Bootcamp Generator</p>
+        <p class="feature-desc">AI-built training sessions targeting your specific weaknesses. Every session is different. Every session has a purpose.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="12" r="5" stroke="#2a2a3a" stroke-width="1.5"/>
+          <path d="M8 30 C8 24 28 24 28 30" stroke="#2a2a3a" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="28" cy="12" r="3" fill="#B8962E" stroke="#B8962E"/>
+          <path d="M26 12 L28 14 L32 10" stroke="#0d0f14" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="feature-title">Autodarts Integration</p>
+        <p class="feature-desc">Seamless connection to your Autodarts hardware. Coordinates, scoring, and coaching all in one place.</p>
+      </div>
+
+      <div class="feature-card reveal">
+        <svg class="feature-icon" viewBox="0 0 36 36" fill="none">
+          <path d="M8 28 L8 20 L14 14 L20 18 L28 8 L28 28 Z" stroke="#B8962E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <line x1="6" y1="28" x2="30" y2="28" stroke="#2a2a3a" stroke-width="1"/>
+        </svg>
+        <p class="feature-title">Equipment A/B Testing</p>
+        <p class="feature-desc">Log your barrels, flights, and shafts. Let the data tell you which setup actually performs better.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ALPHA CTA — social proof only, quiet link for approved testers -->
+  <section class="alpha-cta">
+    <div class="alpha-cta-inner reveal">
+      <div class="alpha-badge">Closed Alpha</div>
+      <h2 class="alpha-title">Already live with early players</h2>
+      <p class="alpha-desc">A small group of players are using DartsHQ right now, testing with Autodarts hardware and manual entry setups. Full launch is on the horizon — join the waitlist to be first to know.</p>
+      <a href="https://app.dartshq.com" class="alpha-link" target="_blank">I've been approved — take me to the app →</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">Darts<span>HQ</span></div>
+    <p>© 2026 DartsHQ · dartshq.com</p>
+    <p><a href="mailto:hello@dartshq.com">hello@dartshq.com</a></p>
+  </footer>
+
+</div>
+
+<script>
+  // Nav scroll effect
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => observer.observe(el));
+
+  // ── ACCURATE DARTBOARD GENERATOR ──
+  // Real board proportions: outer edge=330, double ring outer=330, double ring inner=305,
+  // treble ring outer=210, treble ring inner=185, large single ends at 305/185
+  // bull outer (25) = 40, bullseye (50) = 18
+  (function buildBoard() {
+    const svg = document.getElementById('hero-board');
+    const cx = 350, cy = 350;
+    const ns = 'http://www.w3.org/2000/svg';
+
+    const R_OUTER     = 330; // outer board edge
+    const R_DBL_OUT   = 330; // double ring outer
+    const R_DBL_IN    = 305; // double ring inner
+    const R_TBL_OUT   = 210; // treble ring outer
+    const R_TBL_IN    = 185; // treble ring inner
+    const R_BULL_OUT  = 40;  // outer bull (25)
+    const R_BULL_IN   = 18;  // bullseye (50)
+
+    const gold  = '#B8962E';
+    const white = 'rgba(255,255,255,0.7)';
+
+    function mkEl(tag, attrs) {
+      const el = document.createElementNS(ns, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      return el;
+    }
+
+    function mkCircle(r, stroke, sw) {
+      return mkEl('circle', { cx, cy, r, stroke, 'stroke-width': sw, fill: 'none' });
+    }
+
+    // Outer board edge
+    svg.appendChild(mkCircle(R_OUTER, gold, 1.5));
+
+    // Double ring
+    svg.appendChild(mkCircle(R_DBL_OUT, gold, 1));
+    svg.appendChild(mkCircle(R_DBL_IN, gold, 1));
+
+    // Treble ring
+    svg.appendChild(mkCircle(R_TBL_OUT, gold, 1));
+    svg.appendChild(mkCircle(R_TBL_IN, gold, 1));
+
+    // Outer bull + bullseye
+    svg.appendChild(mkCircle(R_BULL_OUT, gold, 1.2));
+    svg.appendChild(mkEl('circle', { cx, cy, r: R_BULL_IN, fill: gold }));
+
+    // 20 segment lines — exactly 18° apart, offset by -9° so segment 20 is centred at top
+    // (standard board: 20 at top, rotating clockwise: 20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5)
+    const startAngle = -Math.PI / 2 - Math.PI / 20; // -90° - 9° offset
+    for (let i = 0; i < 20; i++) {
+      const angle = startAngle + (i * Math.PI * 2) / 20;
+      const x2 = cx + Math.cos(angle) * R_OUTER;
+      const y2 = cy + Math.sin(angle) * R_OUTER;
+      svg.appendChild(mkEl('line', {
+        x1: cx, y1: cy, x2, y2,
+        stroke: white,
+        'stroke-width': '0.6'
+      }));
+    }
+  })();
+
+  // Animated dot grid background
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h;
+
+  function resize() {
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function drawGrid() {
+    ctx.clearRect(0, 0, w, h);
+    const spacing = 40;
+    const dotR = 0.8;
+    ctx.fillStyle = 'rgba(184,150,46,0.25)';
+    for (let x = 0; x < w; x += spacing) {
+      for (let y = 0; y < h; y += spacing) {
+        const dx = (x - w/2) / (w/2);
+        const dy = (y - h/2) / (h/2);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const alpha = Math.min(dist * 0.5, 0.3);
+        ctx.globalAlpha = alpha;
+        ctx.beginPath();
+        ctx.arc(x, y, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+  drawGrid();
+  window.addEventListener('resize', drawGrid);
+</script>
+</body>
+</html>
